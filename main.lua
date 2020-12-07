@@ -1,39 +1,64 @@
-Object = require 'libraries/classic'
+-- WFC Renderer
 
-blobs = {}
+tileSize = 16
+numTiles = 8 * 8
+mapWidth = 20
+mapHeight = 15
 
-Blob = Object.extend(Object)
-
-function Blob.new(self, x, y)
-  self.x = x;
-  self.y = y;
+function loadTiles()
+  local img = love.graphics.newImage('assets/images/tiles.png')
+  img:setFilter('nearest', 'nearest')
+  mapTiles = love.graphics.newSpriteBatch(img, numTiles, 'static')
+  -- make quads
+  mapTileQuads = {}
+  for i = 0, 7 do
+    for j = 0, 7 do
+      table.insert(mapTileQuads, love.graphics.newQuad(
+        i * tileSize,
+        j * tileSize,
+        tileSize,
+        tileSize,
+        img:getWidth(),
+        img:getHeight()
+      ))
+    end
+  end
 end
 
-function Blob.draw(self)
-  love.graphics.circle("line", self.x, self.y, 10)
+function loadMap()
+  map = {}
+  for i = 1, mapWidth do
+    table.insert(map, {})
+    for j = 1, mapHeight do
+      table.insert(map[i], 1)
+    end
+  end
 end
 
-function makeRandomBlob()
-  local blob = Blob(
-    love.math.random() * 320,
-    love.math.random() * 240
-  )
-  return blob
+function updateMapTiles()
+  mapTiles:clear()
+  for i = 1, mapWidth do
+    for j = 1, mapHeight do
+      mapTiles:add(
+        mapTileQuads[map[i][j]],
+        (i - 1) * tileSize,
+        (j - 1) * tileSize
+      )
+    end
+  end
+  mapTiles:flush()
 end
 
 function love.load()
-  love.graphics.setColor(0, 1, 0)
-  --love.graphics.setLineStyle("rough")
+  loadMap()
+  loadTiles()
+  updateMapTiles()
 end
 
 function love.update()
-  local randomBlob = makeRandomBlob()
-  table.insert(blobs, randomBlob)
+
 end
 
 function love.draw()
-  local vertices = {}
-  for i=1, #blobs do
-    blobs[i]:draw()
-  end
+  love.graphics.draw(mapTiles)
 end
