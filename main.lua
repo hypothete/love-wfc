@@ -30,7 +30,7 @@ function loadMap()
   for i = 1, mapWidth do
     table.insert(map, {})
     for j = 1, mapHeight do
-      table.insert(map[i], 1)
+      table.insert(map[i], 0)
     end
   end
 end
@@ -40,7 +40,7 @@ function updateMapTiles()
   for i = 1, mapWidth do
     for j = 1, mapHeight do
       mapTiles:add(
-        mapTileQuads[map[i][j]],
+        mapTileQuads[map[i][j] + 1],
         (i - 1) * tileSize,
         (j - 1) * tileSize
       )
