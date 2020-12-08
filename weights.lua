@@ -1,4 +1,5 @@
 Object = require 'libraries/classic'
+-- https://github.com/rxi/classic
 
 weights = {}
 
@@ -33,7 +34,6 @@ end
 function readWeightsFile()
   local lines = {}
   for line in io.lines('assets/data/garden.txt') do
-    -- print(line)
     lines[#lines + 1] = line
   end
   return lines
@@ -49,7 +49,7 @@ function loadWeights()
   local lines = readWeightsFile()
   for i=1, #lines do
       local weight = parseLine(lines[i])
-      weight:print()
+      -- weight:print()
       table.insert(weights, weight)
   end
 end

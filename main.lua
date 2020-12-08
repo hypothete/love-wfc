@@ -1,7 +1,7 @@
 -- WFC Renderer
 
 require('map')
-require('weights-parser')
+require('weights')
 
 function love.load()
   loadMap()
