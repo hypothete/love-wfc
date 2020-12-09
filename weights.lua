@@ -9,13 +9,14 @@ function splitOnCommas(cstr)
   local ctable = {}
   if not cstr then return ctable end
   for token in string.gmatch(cstr, '(%d+),') do
-      table.insert(ctable, token)
+      table.insert(ctable, tonumber(token))
   end
   return ctable
 end
 
-function Weight:new(id, n, s, e, w)
+function Weight:new(id, f, n, s, e, w)
   self.id = id;
+  self.freq = tonumber(f);
   self.n = splitOnCommas(n);
   self.s = splitOnCommas(s);
   self.e = splitOnCommas(e);
@@ -24,6 +25,7 @@ end
 
 function Weight:print()
   print('id', self.id)
+  print('freq', self.freq)
   print('n', #self.n)
   print('s', #self.s)
   print('e', #self.e)
@@ -40,8 +42,8 @@ function readWeightsFile()
 end
 
 function parseLine(line)
-  local _, _, i, n, s, e, w = string.find(line, 'i(%d+),n(%S+),s(%S+),e(%S+),w(%S+)')
-  local weight = Weight(i, n, s, e, w)
+  local _, _, i, f, n, s, e, w = string.find(line, 'i(%d+),f(%d+),n(%S+),s(%S+),e(%S+),w(%S+)')
+  local weight = Weight(i, f, n, s, e, w)
   return weight
 end
 
@@ -49,7 +51,16 @@ function loadWeights()
   local lines = readWeightsFile()
   for i=1, #lines do
       local weight = parseLine(lines[i])
-      -- weight:print()
+      weight:print()
       table.insert(weights, weight)
   end
+end
+
+function getFrequency(tileId)
+  for i=1, #weights do
+      if weights[i].id == tileId then
+        return weights[i].freq;
+      end
+  end
+  return -1
 end
