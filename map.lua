@@ -1,5 +1,7 @@
-tileSize = 16
-numTiles = 8 * 8
+tileSize = 16 --px
+tileWidth = 8 --in src image
+tileHeight = 8
+numTiles = tileWidth * tileHeight
 mapWidth = 20
 mapHeight = 15
 mapTiles = nil
@@ -10,10 +12,9 @@ function loadTiles()
   local img = love.graphics.newImage('assets/images/tiles.png')
   img:setFilter('nearest', 'nearest')
   mapTiles = love.graphics.newSpriteBatch(img, numTiles, 'static')
-  -- make quads
   mapTileQuads = {}
-  for i = 0, 7 do
-    for j = 0, 7 do
+  for i = 0, tileWidth - 1 do
+    for j = 0, tileHeight - 1 do
       table.insert(mapTileQuads, love.graphics.newQuad(
         i * tileSize,
         j * tileSize,

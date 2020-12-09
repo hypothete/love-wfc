@@ -2,12 +2,12 @@
 
 require('map')
 require('weights')
+require('core')
 
 function love.load()
   loadMap()
   loadTiles()
   updateMapTiles()
-  loadWeights()
 end
 
 function love.update()
