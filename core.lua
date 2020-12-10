@@ -9,6 +9,13 @@ function Cell:new()
   for i=1, numTiles do
     table.insert(self.possible, true)
   end
+  self.sumOfPossibleTileWeights = self:totalPossibleFreq()
+  self.sumOfPossibleTileWeightsLogWeights = 0
+  for i=1, numTiles do
+    local _, rl = getFrequency(i - 1)
+    self.sumOfPossibleTileWeightsLogWeights = self.sumOfPossibleTileWeightsLogWeights + rl
+  end
+  
 end
 
 function Cell:totalPossibleFreq()
@@ -21,16 +28,16 @@ function Cell:totalPossibleFreq()
   return total
 end
 
+function Cell:removeTile(tileIndex)
+  self.possible[tileIndex + 1] = false
+  local rf, rl = getFrequency(tileIndex)
+  self.sumOfPossibleTileWeights = self.sumOfPossibleTileWeights - rf
+  self.sumOfPossibleTileWeightsLogWeights = self.sumOfPossibleTileWeightsLogWeights - rl
+end
+
 function Cell:getEntropy()
-  local totalWeight = self:totalPossibleFreq()
-  local sumOfWeightLogWeight = 0
-  for i=1, numTiles do
-    if self.possible[i] then
-      local rf = getFrequency(i - 1)
-      sumOfWeightLogWeight = sumOfWeightLogWeight + rf * math.log(rf, 2)
-    end
-  end
-  return math.log(totalWeight, 2) - (sumOfWeightLogWeight / totalWeight)
+  return math.log(self.sumOfPossibleTileWeights, 2) -
+    (self.sumOfPossibleTileWeightsLogWeights / self.sumOfPossibleTileWeights)
 end
 
 function Core:new()

@@ -17,6 +17,7 @@ end
 function Weight:new(id, f, n, s, e, w)
   self.id = id;
   self.freq = tonumber(f);
+  self.fflog2 = self.freq * math.log(self.freq, 2)
   self.n = splitOnCommas(n);
   self.s = splitOnCommas(s);
   self.e = splitOnCommas(e);
@@ -26,6 +27,7 @@ end
 function Weight:print()
   print('id', self.id)
   print('freq', self.freq)
+  print('fflog2', self.fflog2)
   print('n', #self.n)
   print('s', #self.s)
   print('e', #self.e)
@@ -59,8 +61,8 @@ end
 function getFrequency(tileId)
   for i=1, #weights do
       if weights[i].id == tileId then
-        return weights[i].freq;
+        return weights[i].freq, weights[i].fflog2;
       end
   end
-  return -1
+  return -1, -1
 end

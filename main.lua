@@ -2,7 +2,7 @@
 
 require('map')
 require('weights')
--- require('core')
+require('core')
 
 function love.load()
   loadMap()
