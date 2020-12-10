@@ -5,6 +5,7 @@ require('weights')
 require('core')
 
 function love.load()
+  love.math.setRandomSeed(37)
   loadMap()
   loadTiles()
   updateMapTiles()
