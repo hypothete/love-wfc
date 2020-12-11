@@ -15,13 +15,13 @@ function splitOnCommas(cstr)
 end
 
 function Weight:new(id, f, n, s, e, w)
-  self.id = id;
-  self.freq = tonumber(f);
+  self.id = id
+  self.freq = tonumber(f)
   self.fflog2 = self.freq * math.log(self.freq, 2)
-  self.n = splitOnCommas(n);
-  self.s = splitOnCommas(s);
-  self.e = splitOnCommas(e);
-  self.w = splitOnCommas(w);
+  self.n = splitOnCommas(n)
+  self.s = splitOnCommas(s)
+  self.e = splitOnCommas(e)
+  self.w = splitOnCommas(w)
 end
 
 function Weight:print()
@@ -58,11 +58,19 @@ function loadWeights()
   end
 end
 
-function getFrequency(tileId)
+function getWeight(tileId)
   for i=1, #weights do
       if weights[i].id == tileId then
-        return weights[i].freq, weights[i].fflog2;
+        return weights[i]
       end
   end
-  return -1, -1
+end
+
+function getFrequency(tileId)
+  local weight = getWeight(tileId)
+  if weight then
+    return weight.freq, weight.fflog2
+  else
+    return -1, -1
+  end
 end

@@ -1,17 +1,32 @@
 -- core algorithm
+-- follows the tutroial https://www.gridbugs.org/wave-function-collapse
 
 Core = Object:extend()
 Cell = Object:extend()
 EntropyCoord = Object:extend()
+RemovalUpdate = Object:extend()
+TileEnablerCount = Object:extend()
+
+function TileEnablerCount:new(tileIndex)
+  local weight = getWeight(tileIndex)
+  self.n = #weight.n
+  self.s = #weight.s
+  self.e = #weight.e
+  self.w = #weight.w
+end
 
 function Cell:new()
   self.possible = {}
   self.sumOfPossibleWeights = 0
   self.sumOfPossibleWeightsLogWeights = 0
-  -- set all options to true
-  -- set all weights to max
+  self.tileEnablerCounts = {}
   for i=1, numTiles do
+    -- set all options to true
     table.insert(self.possible, true)
+    -- build the tileEnablerCount table
+    local tec = TileEnablerCount(i - 1)
+    table.insert(self.tileEnablerCounts, tec)
+    -- set all weights to max
     local rf, rl = getFrequency(i - 1)
     self.sumOfPossibleWeights = self.sumOfPossibleWeights + rf
     self.sumOfPossibleWeightsLogWeights = self.sumOfPossibleWeightsLogWeights + rl
@@ -54,11 +69,23 @@ function EntropyCoord:new(x, y, e)
   self.e = e
 end
 
+function RemovalUpdate:new(x,y,tile)
+  self.x = x
+  self.y = y
+  self.tile = tile
+end
+
 function Core:new()
   self.remaining = mapWidth * mapHeight
   self.grid = {}
+
   -- working table for uncollapsed cells
   self.entropyHeap = {}
+
+  -- working table for propagation
+  self.tileRemovals = {}
+  
+  -- build the cell grid
   for i = 1, mapWidth do
     table.insert(self.grid, {})
     for j = 1, mapHeight do
@@ -91,11 +118,17 @@ function Core:collapseCellAt(x, y)
   local tileIndexToCollapse = cell:chooseTileIndex()
   cell.collapsed = true
   for i = 1, numTiles do
-    cell.possible[i] = tileIndexToCollapse == (i - 1)
+    if tileIndexToCollapse ~= (i - 1) then
+      cell.possible[i] = false
+      local removal = RemovalUpdate(x, y, i - 1)
+      self.tileRemovals.push(removal)
+    end
   end
+  self.grid[x][y] = cell --necessary?
 end
 
 function Core:propagate()
+
 end
 
 function Core:run()
