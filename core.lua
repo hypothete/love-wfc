@@ -34,6 +34,20 @@ function Cell:getEntropy()
     (self.sumOfPossibleWeightsLogWeights / self.sumOfPossibleWeights)
 end
 
+function Cell:chooseTileIndex()
+  local remaining = love.math.random() * self.sumOfPossibleWeights
+  for i = 1, numTiles do
+    if self.possible[i] then
+      local rf = getFrequency(i - 1)
+      if remaining >= rf then
+        remaining = remaining - rf
+      else
+        return i
+      end
+    end
+  end
+end
+
 function EntropyCoord:new(x, y, e)
   self.x = x
   self.y = y
@@ -72,7 +86,13 @@ function Core:chooseNextCell()
   end
 end
 
-function Core:collapseCell()
+function Core:collapseCellAt(x, y)
+  local cell = self.grid[x][y]
+  local tileIndexToCollapse = cell:chooseTileIndex()
+  cell.collapsed = true
+  for i = 1, numTiles do
+    cell.possible[i] = tileIndexToCollapse == (i - 1)
+  end
 end
 
 function Core:propagate()
