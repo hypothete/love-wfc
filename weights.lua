@@ -1,27 +1,27 @@
-Object = require 'libraries/classic'
--- https://github.com/rxi/classic
-
-weights = {}
+-- weight and weights casses for map gen
 
 Weight = Object:extend()
+Weights = Object:extend()
 
-function splitOnCommas(cstr)
+function Weight:new(id, f, n, s, e, w)
+  self.id = id
+  -- overall frequency
+  self.freq = tonumber(f)
+  self.fflog2 = self.freq * math.log(self.freq, 2)
+  -- compatible tiles
+  self.n = self:splitOnCommas(n)
+  self.s = self:splitOnCommas(s)
+  self.e = self:splitOnCommas(e)
+  self.w = self:splitOnCommas(w)
+end
+
+function Weight:splitOnCommas(cstr)
   local ctable = {}
   if not cstr then return ctable end
   for token in string.gmatch(cstr, '(%d+),') do
       table.insert(ctable, tonumber(token))
   end
   return ctable
-end
-
-function Weight:new(id, f, n, s, e, w)
-  self.id = id
-  self.freq = tonumber(f)
-  self.fflog2 = self.freq * math.log(self.freq, 2)
-  self.n = splitOnCommas(n)
-  self.s = splitOnCommas(s)
-  self.e = splitOnCommas(e)
-  self.w = splitOnCommas(w)
 end
 
 function Weight:print()
@@ -35,39 +35,47 @@ function Weight:print()
   print()
 end
 
-function readWeightsFile()
+function Weights:new(filename)
+  self.filename = filename
+  self.weights = {}
+  self.numTiles = 0
+  self:loadWeights()
+end
+
+function Weights:readWeightsFile()
   local lines = {}
-  for line in io.lines('assets/data/garden.txt') do
+  for line in io.lines(self.filename) do
     lines[#lines + 1] = line
   end
   return lines
 end
 
-function parseLine(line)
+function Weights:parseLine(line)
   local _, _, i, f, n, s, e, w = string.find(line, 'i(%d+),f(%d+),n(%S+),s(%S+),e(%S+),w(%S+)')
   local weight = Weight(i, f, n, s, e, w)
   return weight
 end
 
-function loadWeights()
-  local lines = readWeightsFile()
+function Weights:loadWeights()
+  local lines = self:readWeightsFile()
   for i=1, #lines do
-      local weight = parseLine(lines[i])
+      local weight = self:parseLine(lines[i])
       weight:print()
-      table.insert(weights, weight)
+      table.insert(self.weights, weight)
+      self.numTiles = self.numTiles + 1
   end
 end
 
-function getWeight(tileId)
-  for i=1, #weights do
-      if weights[i].id == tileId then
-        return weights[i]
+function Weights:getWeight(tileId)
+  for i=1, #self.weights do
+      if self.weights[i].id == tileId then
+        return self.weights[i]
       end
   end
 end
 
-function getFrequency(tileId)
-  local weight = getWeight(tileId)
+function Weights:getFrequency(tileId)
+  local weight = self:getWeight(tileId)
   if weight then
     return weight.freq, weight.fflog2
   else

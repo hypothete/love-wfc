@@ -3,7 +3,7 @@
     "love"
   ],
   "Lua.diagnostics.disable": [
-    "lowercase-global"
+    // "lowercase-global"
   ],
   "cmake.configureOnOpen": false
 }

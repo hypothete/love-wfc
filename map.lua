@@ -1,25 +1,29 @@
-tileSize = 16 --px
-tileWidth = 8 --in src image
-tileHeight = 8
-numTiles = tileWidth * tileHeight
-mapWidth = 20
-mapHeight = 15
-mapTiles = nil
-mapTileQuads = {}
-map = {}
+Map = Object:extend()
 
-function loadTiles()
-  local img = love.graphics.newImage('assets/images/tiles.png')
+function Map:new(filename, width, height, tileSize, tileWidth, tileHeight)
+  self.filename = filename
+  self.data = nil
+  self.spriteBatch = nil
+  self.width = width
+  self.height = height
+  self.tileSize = tileSize
+  self.tileWidth = tileWidth
+  self.tileHeight = tileHeight
+  self.quads = {}
+  self:loadTiles()
+end
+
+function Map:loadTiles()
+  local img = love.graphics.newImage(self.filename)
   img:setFilter('nearest', 'nearest')
-  mapTiles = love.graphics.newSpriteBatch(img, numTiles, 'static')
-  mapTileQuads = {}
-  for i = 0, tileWidth - 1 do
-    for j = 0, tileHeight - 1 do
-      table.insert(mapTileQuads, love.graphics.newQuad(
-        i * tileSize,
-        j * tileSize,
-        tileSize,
-        tileSize,
+  self.spriteBatch = love.graphics.newSpriteBatch(img, self.tileWidth * self.tileHeight, 'static')
+  for i = 0, self.tileWidth - 1 do
+    for j = 0, self.tileHeight - 1 do
+      table.insert(self.quads, love.graphics.newQuad(
+        i * self.tileSize,
+        j * self.tileSize,
+        self.tileSize,
+        self.tileSize,
         img:getWidth(),
         img:getHeight()
       ))
@@ -27,25 +31,17 @@ function loadTiles()
   end
 end
 
-function loadMap()
-  for i = 1, mapWidth do
-    table.insert(map, {})
-    for j = 1, mapHeight do
-      table.insert(map[i], 0)
-    end
-  end
-end
-
-function updateMapTiles()
-  mapTiles:clear()
-  for i = 1, mapWidth do
-    for j = 1, mapHeight do
-      mapTiles:add(
-        mapTileQuads[map[i][j] + 1],
-        (i - 1) * tileSize,
-        (j - 1) * tileSize
+function Map:updateTiles(data)
+  self.data = data
+  self.spriteBatch:clear()
+  for i = 1, self.width do
+    for j = 1, self.height do
+      self.spriteBatch:add(
+        self.quads[self.data[i][j] + 1],
+        (i - 1) * self.tileSize,
+        (j - 1) * self.tileSize
       )
     end
   end
-  mapTiles:flush()
+  self.spriteBatch:flush()
 end
