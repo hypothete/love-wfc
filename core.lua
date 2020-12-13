@@ -9,8 +9,7 @@ TileEnablerCount = Object:extend()
 
 DIRECTIONS = { 'n', 's', 'e', 'w' }
 
-function TileEnablerCount:new(tileIndex)
-  local weight = self.weights.getWeight(tileIndex)
+function TileEnablerCount:new(weight)
   self.n = #weight.n
   self.s = #weight.s
   self.e = #weight.e
@@ -31,12 +30,15 @@ function Cell:new(weights)
     -- set all options to true
     table.insert(self.possible, true)
     -- build the tileEnablerCount table
-    local tec = TileEnablerCount(i - 1)
+    local tecWeight = self.weights:getWeight(i - 1)
+
+    local tec = TileEnablerCount(tecWeight)
     table.insert(self.tileEnablerCounts, tec)
     -- set all weights to max
-    local rf, rl = self.weights.getFrequency(i - 1)
+    local rf, rl = self.weights:getFrequency(i - 1)
     self.sumOfPossibleWeights = self.sumOfPossibleWeights + rf
     self.sumOfPossibleWeightsLogWeights = self.sumOfPossibleWeightsLogWeights + rl
+
   end
   -- precomputed entropy
   self.noise = love.math.random() / 10000
@@ -46,7 +48,7 @@ end
 
 function Cell:removeTile(tileIndex)
   self.possible[tileIndex + 1] = false
-  local rf, rl = self.weights.getFrequency(tileIndex)
+  local rf, rl = self.weights:getFrequency(tileIndex)
   self.sumOfPossibleWeights = self.sumOfPossibleWeights - rf
   self.sumOfPossibleWeightsLogWeights = self.sumOfPossibleWeightsLogWeights - rl
 end
@@ -64,15 +66,15 @@ function Cell:getEntropy()
     (self.sumOfPossibleWeightsLogWeights / self.sumOfPossibleWeights)
 end
 
-function Cell:chooseTileIndex()
+function Cell:chooseTileID()
   local remaining = love.math.random() * self.sumOfPossibleWeights
   for i = 1, self.weights.numTiles do
     if self.possible[i] then
-      local rf = self.weights.getFrequency(i - 1)
+      local rf = self.weights:getFrequency(i - 1)
       if remaining >= rf then
         remaining = remaining - rf
       else
-        return i
+        return i - 1
       end
     end
   end
@@ -84,6 +86,7 @@ function Cell:getOnlyPossible()
       return i - 1
     end
   end
+  error('No possible values for cell')
 end
 
 function EntropyCoord:new(x, y, e)
@@ -92,7 +95,10 @@ function EntropyCoord:new(x, y, e)
   self.e = e
 end
 
-function RemovalUpdate:new(core, x,y,tile)
+function RemovalUpdate:new(core, x, y, tile)
+  if tile == nil then
+    error('tile is nil')
+  end
   self.core = core
   self.x = x
   self.y = y
@@ -152,7 +158,7 @@ function Core:new(map, weights)
     table.insert(self.final, {})
     for j = 1, self.map.height do
       local cell = self.grid[i][j]
-      table.insert(self.final, cell:getOnlyPossible())
+      table.insert(self.final[i], cell:getOnlyPossible())
     end
   end
 end
@@ -162,7 +168,7 @@ function Core:chooseNextCell()
     return a.e > b.e
   end)
   local coord = table.remove(self.entropyHeap)
-  while coord do
+  while coord ~= nil do
     local cell = self.grid[coord.x][coord.y]
     if not cell.collapsed then
       return coord.x, coord.y
@@ -173,10 +179,10 @@ end
 
 function Core:collapseCellAt(x, y)
   local cell = self.grid[x][y]
-  local tileIndexToCollapse = cell:chooseTileIndex()
+  local tileIdToCollapse = cell:chooseTileID()
   cell.collapsed = true
   for i = 1, self.weights.numTiles do
-    if tileIndexToCollapse ~= (i - 1) then
+    if tileIdToCollapse ~= (i - 1) then
       cell.possible[i] = false
       local removal = RemovalUpdate(self, x, y, i - 1)
       table.insert(self.tileRemovals, removal)
@@ -186,12 +192,12 @@ end
 
 function Core:propagate()
   local removalUpdate = table.remove(self.tileRemovals)
-  while removalUpdate do
+  while removalUpdate ~= nil do
     for i = 1, #DIRECTIONS do
       local dir = DIRECTIONS[i]
       local neighborX, neighborY = removalUpdate:getNeighbor(dir)
       local neighborCell = self.grid[neighborX][neighborY]
-      local currentTile = self.weights.getWeight(removalUpdate.tileIndex)
+      local currentTile = self.weights:getWeight(removalUpdate.tileIndex)
       for j = 1, #currentTile[dir] do
         local compatTileId = currentTile[i]
         local enabler = neighborCell.tileEnablerCounts[compatTileId+1]
@@ -201,8 +207,7 @@ function Core:propagate()
               compatTileId
             )
             if neighborCell:hasNoPossibleTiles() then
-              print('ERROR no options at '..neighborX..' '..neighborY)
-              return
+              error('No options at '..neighborX..' '..neighborY)
             end
             local eCoord = EntropyCoord(neighborX, neighborY, neighborCell:getEntropy())
             table.insert(self.entropyHeap, eCoord)

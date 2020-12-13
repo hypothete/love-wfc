@@ -13,8 +13,10 @@ map = nil
 
 function love.load()
   love.math.setRandomSeed(37)
-  weights = Weights('assets/data/garden.txt')
-  map = Map('assets/images/tiles.png', 20, 15, 16, 8, 8)
+  weights = Weights('assets/data/simple.txt', 2 * 2)
+  map = Map('assets/images/simple.png', 40, 30, 16, 2, 2)
+  -- weights = Weights('assets/data/garden.txt', 32 * 32)
+  -- map = Map('assets/images/garden.png', 40, 30, 16, 8, 8)
   core = Core(map, weights)
   map:updateTiles(core.final)
 end

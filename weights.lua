@@ -4,7 +4,7 @@ Weight = Object:extend()
 Weights = Object:extend()
 
 function Weight:new(id, f, n, s, e, w)
-  self.id = id
+  self.id = tonumber(id)
   -- overall frequency
   self.freq = tonumber(f)
   self.fflog2 = self.freq * math.log(self.freq, 2)
@@ -35,10 +35,10 @@ function Weight:print()
   print()
 end
 
-function Weights:new(filename)
+function Weights:new(filename, numTiles)
   self.filename = filename
   self.weights = {}
-  self.numTiles = 0
+  self.numTiles = numTiles
   self:loadWeights()
 end
 
@@ -60,18 +60,20 @@ function Weights:loadWeights()
   local lines = self:readWeightsFile()
   for i=1, #lines do
       local weight = self:parseLine(lines[i])
-      weight:print()
+      -- weight:print()
       table.insert(self.weights, weight)
-      self.numTiles = self.numTiles + 1
   end
 end
 
 function Weights:getWeight(tileId)
   for i=1, #self.weights do
-      if self.weights[i].id == tileId then
-        return self.weights[i]
-      end
+    if self.weights[i].id == tileId then
+      return self.weights[i]
+    end
   end
+  local weight = Weight(tileId, 0, 0, 0, 0, 0)
+  table.insert(self.weights, weight)
+  return self.weights[#self.weights]
 end
 
 function Weights:getFrequency(tileId)
