@@ -60,7 +60,7 @@ function Weights:loadWeights()
   local lines = self:readWeightsFile()
   for i=1, #lines do
       local weight = self:parseLine(lines[i])
-      -- weight:print()
+      weight:print()
       table.insert(self.weights, weight)
   end
 end
