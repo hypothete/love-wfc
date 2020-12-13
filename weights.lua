@@ -39,10 +39,9 @@ function Weight:print()
   print()
 end
 
-function Weights:new(filename, numTiles)
+function Weights:new(filename)
   self.filename = filename
   self.weights = {}
-  self.numTiles = numTiles
   self:loadWeights()
 end
 
@@ -55,7 +54,7 @@ function Weights:readWeightsFile()
 end
 
 function Weights:parseLine(line)
-  local _, _, i, f, n, s, e, w = string.find(line, 'i(%d+),f(%d+),n(%S+),s(%S+),e(%S+),w(%S+)')
+  local _, _, i, f, n, s, e, w = string.find(line, 'i(%d+),f(%d+),n(%S*),s(%S*),e(%S*),w(%S*)')
   local weight = Weight(i, f, n, s, e, w)
   return weight
 end
@@ -64,12 +63,11 @@ function Weights:loadWeights()
   local lines = self:readWeightsFile()
   for i=1, #lines do
       local weight = self:parseLine(lines[i])
-      -- weight:print()
       table.insert(self.weights, weight)
   end
 end
 
-function Weights:getWeight(tileId)
+function Weights:getWeightById(tileId)
   if tileId == nil then
     error('tileId is nil')
   end
@@ -78,14 +76,11 @@ function Weights:getWeight(tileId)
       return self.weights[i]
     end
   end
-  -- append an empty entry
-  local weight = Weight(tileId, 0, '', '', '', '')
-  table.insert(self.weights, weight)
-  return self.weights[#self.weights]
+  error('Got invalid tileId')
 end
 
 function Weights:getFrequency(tileId)
-  local weight = self:getWeight(tileId)
+  local weight = self:getWeightById(tileId)
   if weight then
     return weight.freq, weight.fflog2
   else

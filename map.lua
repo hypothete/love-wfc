@@ -17,11 +17,11 @@ function Map:loadTiles()
   local img = love.graphics.newImage(self.filename)
   img:setFilter('nearest', 'nearest')
   self.spriteBatch = love.graphics.newSpriteBatch(img, self.tileWidth * self.tileHeight, 'static')
-  for i = 0, self.tileWidth - 1 do
-    for j = 0, self.tileHeight - 1 do
+  for i = 0, self.tileHeight - 1 do
+    for j = 0, self.tileWidth - 1 do
       table.insert(self.quads, love.graphics.newQuad(
-        i * self.tileSize,
         j * self.tileSize,
+        i * self.tileSize,
         self.tileSize,
         self.tileSize,
         img:getWidth(),

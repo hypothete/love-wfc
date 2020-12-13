@@ -16,6 +16,14 @@ function oppositeDir(dir)
   if dir == 'w' then return 'e' end
 end
 
+function copyTable(someTable)
+  local newTable = {}
+  for i=1, #someTable do
+      table.insert(newTable, someTable[i])
+  end
+  return newTable
+end
+
 function TileEnablerCount:new(weight)
   self.n = #weight.n
   self.s = #weight.s
@@ -33,19 +41,16 @@ function Cell:new(weights)
   self.sumOfPossibleWeights = 0
   self.sumOfPossibleWeightsLogWeights = 0
   self.tileEnablerCounts = {}
-  for i = 1, self.weights.numTiles do
+  for i = 1, #self.weights.weights do
+    local weight = self.weights.weights[i]
     -- set all options to true
-    table.insert(self.possible, true)
+    table.insert(self.possible, weight.id)
     -- build the tileEnablerCount table
-    local tecWeight = self.weights:getWeight(i - 1)
-
-    local tec = TileEnablerCount(tecWeight)
+    local tec = TileEnablerCount(weight)
     table.insert(self.tileEnablerCounts, tec)
     -- set all weights to max
-    local rf, rl = self.weights:getFrequency(i - 1)
-    self.sumOfPossibleWeights = self.sumOfPossibleWeights + rf
-    -- print(self.sumOfPossibleWeightsLogWeights..' '..rl)
-    self.sumOfPossibleWeightsLogWeights = self.sumOfPossibleWeightsLogWeights + rl
+    self.sumOfPossibleWeights = self.sumOfPossibleWeights + weight.freq
+    self.sumOfPossibleWeightsLogWeights = self.sumOfPossibleWeightsLogWeights + weight.fflog2
   end
   -- precomputed entropy
   self.noise = love.math.random() / 10000
@@ -53,19 +58,28 @@ function Cell:new(weights)
   self.collapsed = false
 end
 
+function Cell:removePossible(tileIndex)
+  -- print('removing possible '..tileIndex)
+  for i=1, #self.possible do
+      if self.possible[i] == tileIndex then
+        table.remove(self.possible, i)
+      end 
+  end
+end
+
 function Cell:removeTile(tileIndex)
-  self.possible[tileIndex + 1] = false
+  -- print('removing tile '..tileIndex)
+  if tileIndex == nil then
+    error('tileIndex is nil')
+  end
+  self:removePossible(tileIndex)
   local rf, rl = self.weights:getFrequency(tileIndex)
   self.sumOfPossibleWeights = self.sumOfPossibleWeights - rf
   self.sumOfPossibleWeightsLogWeights = self.sumOfPossibleWeightsLogWeights - rl
 end
 
 function Cell:hasNoPossibleTiles()
-  local res = false
-  for i=1, self.weights.numTiles do
-    res = res or self.possible[i]
-  end
-  return not res
+  return #self.possible == 0
 end
 
 function Cell:getEntropy()
@@ -75,25 +89,15 @@ end
 
 function Cell:chooseTileID()
   local remaining = love.math.random() * self.sumOfPossibleWeights
-  for i = 1, self.weights.numTiles do
-    if self.possible[i] then
-      local rf = self.weights:getFrequency(i - 1)
-      if remaining >= rf then
-        remaining = remaining - rf
-      else
-        return i - 1
-      end
+  for i = 1, #self.possible do
+    -- print(self.possible[i]..' is possible')
+    local rf = self.weights:getFrequency(self.possible[i])
+    if remaining >= rf then
+      remaining = remaining - rf
+    else
+      return self.possible[i]
     end
   end
-end
-
-function Cell:getOnlyPossible()
-  for i=1, self.weights.numTiles do
-    if self.possible[i] then
-      return i - 1
-    end
-  end
-  error('No possible values for cell')
 end
 
 function EntropyCoord:new(x, y, e)
@@ -106,7 +110,7 @@ function RemovalUpdate:new(core, x, y, tile)
   if tile == nil then
     error('tile is nil')
   end
-  print('removing '..tile..' at '..x..' '..y)
+  -- print('removing '..tile..' at '..x..' '..y)
   self.core = core
   self.x = x
   self.y = y
@@ -167,7 +171,7 @@ function Core:new(map, weights)
     table.insert(self.final, {})
     for j = 1, self.map.height do
       local cell = self.grid[i][j]
-      table.insert(self.final[i], cell:getOnlyPossible())
+      table.insert(self.final[i], cell.possible[1])
     end
   end
 end
@@ -189,47 +193,63 @@ end
 function Core:collapseCellAt(x, y)
   local cell = self.grid[x][y]
   local tileIdToCollapse = cell:chooseTileID()
+  if tileIdToCollapse == nil then
+    error('Tried to set '..x..' '..y..' to nil')
+  end
   cell.collapsed = true
-  for i = 1, self.weights.numTiles do
-    if tileIdToCollapse ~= (i - 1) then
-      cell.possible[i] = false
-      local removal = RemovalUpdate(self, x, y, i - 1)
+  -- copy the table since the for loop can change its length
+  local possibleCopy = copyTable(cell.possible)
+  for i = 1, #possibleCopy do
+    local couldBeRemoved = possibleCopy[i]
+    if couldBeRemoved ~= tileIdToCollapse then
+      cell:removePossible(couldBeRemoved)
+      local removal = RemovalUpdate(self, x, y, couldBeRemoved)
       table.insert(self.tileRemovals, removal)
     end
   end
-  print('collapsed '..x..' '..y..' to '..tileIdToCollapse)
+  -- print('collapsed '..x..' '..y..' to '..tileIdToCollapse)
 end
 
 function Core:propagate()
   local removalUpdate = table.remove(self.tileRemovals)
   while removalUpdate ~= nil do
-    local currentWeight = self.weights:getWeight(removalUpdate.tile)
+    local removalWeight = self.weights:getWeightById(removalUpdate.tile)
     for i = 1, #DIRECTIONS do
       local dir = DIRECTIONS[i]
-      -- get a neighbor in one direction
+      -- get a neighbor cell in one direction to update
       local neighborX, neighborY = removalUpdate:getNeighbor(dir)
       local neighborCell = self.grid[neighborX][neighborY]
-      -- go through the compatible tiles in that direction
-      for j = 1, #currentWeight[dir] do
-        local compatTileId = currentWeight[dir][j]
-        local enabler = neighborCell.tileEnablerCounts[compatTileId+1]
-        -- I think we want to check opposite here
-        local opdir = oppositeDir(dir)
-        if enabler[opdir] == 1 then
-          if not enabler:containsAnyZeroCount() then
-            neighborCell:removeTile(
-              compatTileId
-            )
-            if neighborCell:hasNoPossibleTiles() then
-              error('No options at '..neighborX..' '..neighborY)
+      -- go through the compatible tiles for the weight in that direction
+      if not neighborCell.collapsed then
+        for j = 1, #removalWeight[dir] do
+          local compatTileId = removalWeight[dir][j]
+          -- get the enabler count for that tile on the neighbor cell
+          local enabler = neighborCell.tileEnablerCounts[compatTileId+1]
+          -- I think we want to check opposite here
+          -- check if we're about to decrement the neighbor's
+          -- enabler count in the opposite direction (so for the current cell) to 0
+          local opdir = oppositeDir(dir)
+          if enabler[opdir] == 1 then
+            -- if any of the other directions on the enabler are 0,
+            -- the compatible tile is removed from the neighbor
+            -- otherwise we can call a removal
+            if not enabler:containsAnyZeroCount() then
+              neighborCell:removeTile(
+                compatTileId
+              )
+              if neighborCell:hasNoPossibleTiles() then
+                error('No options at '..neighborX..' '..neighborY)
+              end
+              -- update neighbor's entropy
+              local eCoord = EntropyCoord(neighborX, neighborY, neighborCell:getEntropy())
+              table.insert(self.entropyHeap, eCoord)
+              -- propagate neighbor's changes
+              local nRemUpdate = RemovalUpdate(self, neighborX, neighborY, compatTileId)
+              table.insert(self.tileRemovals, nRemUpdate)
             end
-            local eCoord = EntropyCoord(neighborX, neighborY, neighborCell:getEntropy())
-            table.insert(self.entropyHeap, eCoord)
-            local nRemUpdate = RemovalUpdate(self, neighborX, neighborY, compatTileId)
-            table.insert(self.tileRemovals, nRemUpdate)
           end
+          enabler[opdir] = enabler[opdir] - 1
         end
-        enabler[dir] = enabler[dir] - 1
       end
     end
     removalUpdate = table.remove(self.tileRemovals)
