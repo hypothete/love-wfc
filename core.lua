@@ -9,6 +9,13 @@ TileEnablerCount = Object:extend()
 
 DIRECTIONS = { 'n', 's', 'e', 'w' }
 
+function oppositeDir(dir)
+  if dir == 'n' then return 's' end
+  if dir == 's' then return 'n' end
+  if dir == 'e' then return 'w' end
+  if dir == 'w' then return 'e' end
+end
+
 function TileEnablerCount:new(weight)
   self.n = #weight.n
   self.s = #weight.s
@@ -199,12 +206,16 @@ function Core:propagate()
     local currentWeight = self.weights:getWeight(removalUpdate.tile)
     for i = 1, #DIRECTIONS do
       local dir = DIRECTIONS[i]
+      -- get a neighbor in one direction
       local neighborX, neighborY = removalUpdate:getNeighbor(dir)
       local neighborCell = self.grid[neighborX][neighborY]
+      -- go through the compatible tiles in that direction
       for j = 1, #currentWeight[dir] do
         local compatTileId = currentWeight[dir][j]
         local enabler = neighborCell.tileEnablerCounts[compatTileId+1]
-        if enabler[dir] == 1 then
+        -- I think we want to check opposite here
+        local opdir = oppositeDir(dir)
+        if enabler[opdir] == 1 then
           if not enabler:containsAnyZeroCount() then
             neighborCell:removeTile(
               compatTileId
