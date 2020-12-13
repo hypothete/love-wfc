@@ -8,6 +8,10 @@ function Weight:new(id, f, n, s, e, w)
   -- overall frequency
   self.freq = tonumber(f)
   self.fflog2 = self.freq * math.log(self.freq, 2)
+  if self.fflog2 ~= self.fflog2 then
+    -- nan
+    self.fflog2 = 0
+  end
   -- compatible tiles
   self.n = self:splitOnCommas(n)
   self.s = self:splitOnCommas(s)
@@ -18,7 +22,7 @@ end
 function Weight:splitOnCommas(cstr)
   local ctable = {}
   if not cstr then return ctable end
-  for token in string.gmatch(cstr, '(%d+),') do
+  for token in string.gmatch(cstr, '(%d+)') do
       table.insert(ctable, tonumber(token))
   end
   return ctable
@@ -60,18 +64,22 @@ function Weights:loadWeights()
   local lines = self:readWeightsFile()
   for i=1, #lines do
       local weight = self:parseLine(lines[i])
-      weight:print()
+      -- weight:print()
       table.insert(self.weights, weight)
   end
 end
 
 function Weights:getWeight(tileId)
+  if tileId == nil then
+    error('tileId is nil')
+  end
   for i=1, #self.weights do
     if self.weights[i].id == tileId then
       return self.weights[i]
     end
   end
-  local weight = Weight(tileId, 0, 0, 0, 0, 0)
+  -- append an empty entry
+  local weight = Weight(tileId, 0, '', '', '', '')
   table.insert(self.weights, weight)
   return self.weights[#self.weights]
 end

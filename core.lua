@@ -37,8 +37,8 @@ function Cell:new(weights)
     -- set all weights to max
     local rf, rl = self.weights:getFrequency(i - 1)
     self.sumOfPossibleWeights = self.sumOfPossibleWeights + rf
+    -- print(self.sumOfPossibleWeightsLogWeights..' '..rl)
     self.sumOfPossibleWeightsLogWeights = self.sumOfPossibleWeightsLogWeights + rl
-
   end
   -- precomputed entropy
   self.noise = love.math.random() / 10000
@@ -62,7 +62,7 @@ function Cell:hasNoPossibleTiles()
 end
 
 function Cell:getEntropy()
-  return math.log(self.sumOfPossibleWeights, 2) -
+  return self.noise + math.log(self.sumOfPossibleWeights, 2) -
     (self.sumOfPossibleWeightsLogWeights / self.sumOfPossibleWeights)
 end
 
@@ -99,6 +99,7 @@ function RemovalUpdate:new(core, x, y, tile)
   if tile == nil then
     error('tile is nil')
   end
+  print('removing '..tile..' at '..x..' '..y)
   self.core = core
   self.x = x
   self.y = y
@@ -123,6 +124,7 @@ function RemovalUpdate:getNeighbor(dir)
     dx = self.x - 1
     if dx < 1 then dx = dx + self.core.map.width end
   end
+  -- print(self.x..' '..self.y..' neighbor at '..dir..': '..dx..' '..dy)
   return dx, dy
 end
 
@@ -188,18 +190,19 @@ function Core:collapseCellAt(x, y)
       table.insert(self.tileRemovals, removal)
     end
   end
+  print('collapsed '..x..' '..y..' to '..tileIdToCollapse)
 end
 
 function Core:propagate()
   local removalUpdate = table.remove(self.tileRemovals)
   while removalUpdate ~= nil do
+    local currentWeight = self.weights:getWeight(removalUpdate.tile)
     for i = 1, #DIRECTIONS do
       local dir = DIRECTIONS[i]
       local neighborX, neighborY = removalUpdate:getNeighbor(dir)
       local neighborCell = self.grid[neighborX][neighborY]
-      local currentTile = self.weights:getWeight(removalUpdate.tileIndex)
-      for j = 1, #currentTile[dir] do
-        local compatTileId = currentTile[i]
+      for j = 1, #currentWeight[dir] do
+        local compatTileId = currentWeight[dir][j]
         local enabler = neighborCell.tileEnablerCounts[compatTileId+1]
         if enabler[dir] == 1 then
           if not enabler:containsAnyZeroCount() then
