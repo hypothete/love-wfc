@@ -103,7 +103,6 @@ end
 function Cell:chooseTileID()
   local remaining = love.math.random() * self.sumOfPossibleWeights
   for i = 1, #self.possible do
-    -- print(self.possible[i]..' is possible')
     local rf = self.weights:getFrequency(self.possible[i])
     if remaining >= rf then
       remaining = remaining - rf
@@ -155,16 +154,16 @@ end
 function Core:new(map, weights)
   self.map = map
   self.weights = weights
+end
+
+function Core:setup()
   self.remaining = self.map.width * self.map.height
   self.grid = {}
-  self.final = {}
-
+  self.final = nil
   -- working table for uncollapsed cells
   self.entropyHeap = {}
-
   -- working table for propagation
   self.tileRemovals = {}
-  
   -- build the cell grid
   for i = 1, self.map.width do
     table.insert(self.grid, {})
@@ -173,18 +172,6 @@ function Core:new(map, weights)
       table.insert(self.grid[i], cell)
       local coord = EntropyCoord(i, j, cell:getEntropy())
       table.insert(self.entropyHeap, coord)
-    end
-  end
-
-  -- run!
-  self:run()
-  
-  -- final is the generated output
-  for i = 1, self.map.width do
-    table.insert(self.final, {})
-    for j = 1, self.map.height do
-      local cell = self.grid[i][j]
-      table.insert(self.final[i], cell.possible[1])
     end
   end
 end
@@ -220,7 +207,26 @@ function Core:collapseCellAt(x, y)
       table.insert(self.tileRemovals, removal)
     end
   end
-  -- print('collapsed '..x..' '..y..' to '..tileIdToCollapse)
+end
+
+function Core:presetCellAt(x, y, tileIdToCollapse)
+  local cell = self.grid[x][y]
+  if tileIdToCollapse == nil then
+    error('Tried to set '..x..' '..y..' to nil')
+  end
+  cell.collapsed = true
+  -- copy the table since the for loop can change its length
+  local possibleCopy = copyTable(cell.possible)
+  for i = 1, #possibleCopy do
+    local couldBeRemoved = possibleCopy[i]
+    if couldBeRemoved ~= tileIdToCollapse then
+      cell:removePossible(couldBeRemoved)
+      local removal = RemovalUpdate(self, x, y, couldBeRemoved)
+      table.insert(self.tileRemovals, removal)
+    end
+  end
+  self.remaining = self.remaining - 1
+  self:propagate()
 end
 
 function Core:propagate()
@@ -278,5 +284,14 @@ function Core:run()
     self:collapseCellAt(x, y)
     self:propagate()
     self.remaining = self.remaining - 1
+  end
+
+  self.final = {}
+  for i = 1, self.map.width do
+    table.insert(self.final, {})
+    for j = 1, self.map.height do
+      local cell = self.grid[i][j]
+      table.insert(self.final[i], cell.possible[1])
+    end
   end
 end
