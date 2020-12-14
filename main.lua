@@ -13,16 +13,26 @@ map = nil
 
 function love.load()
   -- love.math.setRandomSeed(37)
-  weights = Weights('assets/data/simple.txt')
-  map = Map('assets/images/simple.png', 40, 30, 16, 2, 2)
-  -- weights = Weights('assets/data/garden.txt')
-  -- map = Map('assets/images/garden.png', 40, 30, 16, 8, 8)
+
+  -- weights = Weights('assets/data/simple.txt')
+  -- map = Map('assets/images/simple.png', 40, 30, 16, 2, 2)
+
+  weights = Weights('assets/data/garden.txt')
+  map = Map('assets/images/garden.png', 20, 15, 16, 8, 8)
+
   core = Core(map, weights)
   map:updateTiles(core.final)
 end
 
 function love.update()
 
+end
+
+function love.keyreleased(key)
+  if key == 'space' then
+    core = Core(map, weights)
+    map:updateTiles(core.final)
+  end
 end
 
 function love.draw()

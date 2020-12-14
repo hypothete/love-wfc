@@ -1,10 +1,10 @@
 const fs = require('fs');
 
-// const csv = fs.readFileSync('./assets/maps/garden.csv');
-// const outputPath = './assets/data/garden.txt'
+const csv = fs.readFileSync('./assets/maps/garden.csv');
+const outputPath = './assets/data/garden.txt'
 
-const csv = fs.readFileSync('./assets/maps/simple.csv');
-const outputPath = './assets/data/simple.txt'
+// const csv = fs.readFileSync('./assets/maps/simple.csv');
+// const outputPath = './assets/data/simple.txt'
 
 let tilemap = csv.toString();
 
@@ -42,8 +42,6 @@ fs.writeFileSync(
 );
 
 function getNeighbors(i) {
-  // don't care about diagonals
-
   const neighbors = { n: [], s: [], e: [], w: [] };
   const x = i % width;
   const y = Math.floor(i / width);

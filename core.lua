@@ -25,6 +25,7 @@ function copyTable(someTable)
 end
 
 function TileEnablerCount:new(weight)
+  self.id = weight.id
   self.n = #weight.n
   self.s = #weight.s
   self.e = #weight.e
@@ -33,6 +34,10 @@ end
 
 function TileEnablerCount:containsAnyZeroCount()
   return self.n == 0 or self.s == 0 or self.e == 0 or self.w == 0
+end
+
+function TileEnablerCount:print()
+  print(self.n, self.s, self.e, self.w)
 end
 
 function Cell:new(weights)
@@ -64,6 +69,14 @@ function Cell:removePossible(tileIndex)
       if self.possible[i] == tileIndex then
         table.remove(self.possible, i)
       end 
+  end
+end
+
+function Cell:getEnabler(tileIndex)
+  for i=1, #self.tileEnablerCounts do
+    if self.tileEnablerCounts[i].id == tileIndex then
+      return self.tileEnablerCounts[i]
+    end
   end
 end
 
@@ -224,7 +237,10 @@ function Core:propagate()
         for j = 1, #removalWeight[dir] do
           local compatTileId = removalWeight[dir][j]
           -- get the enabler count for that tile on the neighbor cell
-          local enabler = neighborCell.tileEnablerCounts[compatTileId+1]
+          local enabler = neighborCell:getEnabler(compatTileId)
+          if enabler == nil then
+            error('no enabler for '..compatTileId..' at '..neighborX..' '..neighborY)
+          end
           -- I think we want to check opposite here
           -- check if we're about to decrement the neighbor's
           -- enabler count in the opposite direction (so for the current cell) to 0
