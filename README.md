@@ -6,7 +6,7 @@ An implementation of the Wave Function Collapse (WFC) algorithm
 
 ## How to run
 
-If you're on Windows, `./run.bat` should start the software. Otherwise please follow the instructions on the [LOVE wiki](https://love2d.org/wiki/Getting_Started#Running_Games).
+You'll need to have [LOVE](https://love2d.org/) installed. If you're on Windows, `./run.bat` should start the software. Otherwise please follow the instructions on the [LOVE wiki](https://love2d.org/wiki/Getting_Started#Running_Games).
 
 WFC generation can be re-run by pressing `space`, and you can take screenshots with `s`.
 
