@@ -1,9 +1,0 @@
-{
-  "Lua.diagnostics.globals": [
-    "love"
-  ],
-  "Lua.diagnostics.disable": [
-    // "lowercase-global"
-  ],
-  "cmake.configureOnOpen": false
-}
