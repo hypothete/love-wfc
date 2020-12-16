@@ -44,6 +44,8 @@ end
 function love.keyreleased(key)
   if key == 'space' then
     rebuildCore()
+  elseif key == 's' then
+    love.graphics.captureScreenshot('screenshot'..os.time()..'.png')
   end
 end
 
