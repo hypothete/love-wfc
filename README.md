@@ -26,4 +26,4 @@ To write my own implementation of WFC for LOVE, I worked through the tutorial fo
 
 ## Dependencies
 
-WFC-LOVE uses and includes the [classic](https://github.com/rxi/classic) library by rxi for class-based organization of Lua code.
+LOVE-WFC uses and includes the [classic](https://github.com/rxi/classic) library by rxi for class-based organization of Lua code.
